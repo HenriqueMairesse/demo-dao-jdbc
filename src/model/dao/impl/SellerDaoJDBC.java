@@ -2,6 +2,7 @@ package model.dao.impl;
 
 import db.DB;
 import db.DBException;
+import db.DBIntegrityException;
 import model.dao.SellerDao;
 import model.entities.Department;
 import model.entities.Seller;
@@ -67,8 +68,7 @@ public class SellerDaoJDBC implements SellerDao {
             st = conn.prepareStatement(
                     "UPDATE seller "
                     + "SET Name = ?, Email = ?, BirthDate = ?, BaseSalary = ?, DepartmentId = ? "
-                    + "WHERE Id = ?",
-                    Statement.RETURN_GENERATED_KEYS
+                    + "WHERE Id = ?"
             );
 
             st.setString(1, obj.getName());
@@ -78,18 +78,7 @@ public class SellerDaoJDBC implements SellerDao {
             st.setInt(5, obj.getDepartment().getId());
             st.setInt(6, obj.getId());
 
-            int rowsAffected = st.executeUpdate();
-
-            if (rowsAffected > 0) {
-                ResultSet rs = st.getGeneratedKeys();
-                if (rs.next()) {
-                    int id = rs.getInt(1);
-                    obj.setId(id);
-                }
-                DB.closeResultSet(rs);
-            } else {
-                throw new DBException("Unexpected error! No rows affected!");
-            }
+            st.executeUpdate();
 
         } catch (SQLException e) {
             throw new DBException(e.getMessage());
@@ -112,7 +101,7 @@ public class SellerDaoJDBC implements SellerDao {
                 throw new DBException("Seller doesn't exist!");
             }
         } catch (SQLException e) {
-            throw new DBException(e.getMessage());
+            throw new DBIntegrityException(e.getMessage());
         } finally {
             DB.closeStatement(st);
         }
